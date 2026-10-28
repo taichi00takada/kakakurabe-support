@@ -5,6 +5,10 @@ here = pathlib.Path(__file__).parent
 app = here.parent / unicodedata.normalize("NFC", "かかくらべ") / unicodedata.normalize("NFC", "かかくらべ")
 tpl = (here / "template.html").read_text(encoding="utf-8")
 
+def linkify(escaped):
+    # 本文中の URL（お問い合わせ先のサポートページなど）をリンクにする（html.escape した後の文字列に使う）
+    return re.sub(r"(https?://[A-Za-z0-9._~:/?#\[\]@!$&'*+,;=%-]+)", r'<a href="\1">\1</a>', escaped)
+
 def build(src_name, title, out_name):
     text = re.sub(r"<!--.*?-->", "", (app / src_name).read_text(encoding="utf-8"), flags=re.S)
     body, footer, para = [], [], []
@@ -12,8 +16,8 @@ def build(src_name, title, out_name):
         if not para: return
         items = [l for l in para if l.startswith("・")]
         rest = [l for l in para if not l.startswith("・")]
-        if rest: body.append("<p>" + "<br>".join(html.escape(l) for l in rest) + "</p>")
-        if items: body.append("<ul>" + "".join(f"<li>{html.escape(l[1:])}</li>" for l in items) + "</ul>")
+        if rest: body.append("<p>" + "<br>".join(linkify(html.escape(l)) for l in rest) + "</p>")
+        if items: body.append("<ul>" + "".join(f"<li>{linkify(html.escape(l[1:]))}</li>" for l in items) + "</ul>")
         para.clear()
     for line in text.splitlines():
         s = line.strip()
